@@ -72,6 +72,9 @@ class PlayState extends FlxState
                 maintxt.visible = false;
                 trace("selected path: " + path);
 
+                currentModName = null;
+                currentModPath = null;
+
                 checkSubfoldersForMeta(path);
 
             } else {
@@ -93,12 +96,16 @@ class PlayState extends FlxState
     {
         modActivated = !modActivated;
         activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
-        if (modActivated) {
-            if (currentModName != null) trace("Enabling mod: " + currentModName);
-            renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
+        if (currentModPath != null) {
+            if (modActivated) {
+                if (currentModName != null) trace("Enabling mod: " + currentModName);
+                renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
+            } else {
+                if (currentModName != null) trace("Disabling mod: " + currentModName);
+                renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
+            }
         } else {
-            if (currentModName != null) trace("Disabling mod: " + currentModName);
-            renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
+            trace("No mod selected.");
         }
     }
 
@@ -121,16 +128,13 @@ class PlayState extends FlxState
                         trace("Found _polymod_meta.json in: " + filePath);
                         var metaContent = sys.io.File.getContent(metaFilePathEnabled);
                         var metaData = Json.parse(metaContent);
-                        currentModName = metaData.title;
-                        currentModPath = filePath;
-                        createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version);
+						createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, false, filePath);
                     } else if (sys.FileSystem.exists(metaFilePathDisabled)) {
                         trace("Found _polymod_meta_disabled.json in: " + filePath);
                         var metaContent = sys.io.File.getContent(metaFilePathDisabled);
                         var metaData = Json.parse(metaContent);
-                        createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, true);
+						createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, false, filePath);
                     }
-                    checkSubfoldersForMeta(filePath);
                 }
             }
         } catch (e:Dynamic) {
@@ -142,15 +146,18 @@ class PlayState extends FlxState
     var buttonHeight:Int = 40;
     var verticalSpacing:Int = 10;
 
-    function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false)
-    {
-        var buttonText = disabled ? title + " (Disabled)" : title;
-        var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText + " by " + author, function() {
-            descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
-        });
-        button.label.alignment = "center";
-        button.setGraphicSize(buttonWidth, buttonHeight);
-        button.updateHitbox();
-        buttonGroup.add(button);
-    }
+	function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false, path:String)
+	{
+		var buttonText = disabled ? title + " (Disabled)" : title;
+		var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText + " by " + author, function() {
+			descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
+			currentModName = title;
+			currentModPath = path;
+		});
+		button.label.alignment = "center";
+		button.setGraphicSize(buttonWidth, buttonHeight);
+		button.updateHitbox();
+		buttonGroup.add(button);
+	}
+
 }
