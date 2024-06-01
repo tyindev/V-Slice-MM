@@ -92,22 +92,32 @@ class PlayState extends FlxState
         buttonGroup.add(activationButton);
     }
 
-    function toggleModActivation()
-    {
-        modActivated = !modActivated;
-        activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
-        if (currentModPath != null) {
-            if (modActivated) {
-                if (currentModName != null) trace("Enabling mod: " + currentModName);
-                renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
-            } else {
-                if (currentModName != null) trace("Disabling mod: " + currentModName);
-                renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
-            }
-        } else {
-            trace("No mod selected.");
-        }
-    }
+	function toggleModActivation()
+	{
+		modActivated = !modActivated;
+		activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
+		if (currentModPath != null) 
+		{
+			if (modActivated) {
+				if (currentModName != null) trace("Enabling mod: " + currentModName);
+				renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
+			} else {
+				if (currentModName != null) trace("Disabling mod: " + currentModName);
+				renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
+			}
+			updateDescriptionText(modActivated);
+		} else {
+			trace("No mod selected.");
+		}
+	}
+		
+	function updateDescriptionText(modActivated:Bool)
+	{
+		var activationStatus = modActivated ? "Yes" : "No";
+		var description = descriptionText.text;
+		var existingDescription = description.substring(0, description.lastIndexOf("Mod Activated:") + "Mod Activated:".length);
+		descriptionText.text = existingDescription + " " + activationStatus;
+		}	
 
     function renameMetaFile(currentPath:String, newPath:String)
     {
@@ -147,17 +157,16 @@ class PlayState extends FlxState
     var verticalSpacing:Int = 10;
 
 	function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false, path:String)
-	{
-		var buttonText = disabled ? title + " (Disabled)" : title;
-		var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText + " by " + author, function() {
-			descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
-			currentModName = title;
-			currentModPath = path;
-		});
-		button.label.alignment = "center";
-		button.setGraphicSize(buttonWidth, buttonHeight);
-		button.updateHitbox();
-		buttonGroup.add(button);
-	}
-
+		{
+			var buttonText = disabled ? title + " (Disabled)" : title;
+			var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText + " by " + author, function() {
+				descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
+				currentModName = title;
+				currentModPath = path;
+			});
+			button.label.alignment = "center";
+			button.setGraphicSize(buttonWidth, buttonHeight);
+			button.updateHitbox();
+			buttonGroup.add(button);
+		}		
 }
