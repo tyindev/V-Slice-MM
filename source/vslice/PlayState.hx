@@ -33,14 +33,14 @@ class PlayState extends FlxState
         add(bg);
 
         maintxt = new FlxText(0, 0, FlxG.width, "Press enter to select your FNF V-Slice Mods Folder!", 32);
-        maintxt.setFormat("VCR OSD Mono", 32, FlxColor.BLACK, CENTER);
+        maintxt.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.BLACK);
         maintxt.screenCenter(Y);
         add(maintxt);
 
         descriptionText = new FlxText(FlxG.width / 2, 0, FlxG.width / 2, "", 24);
-        descriptionText.setFormat("VCR OSD Mono", 24, FlxColor.BLACK, LEFT);
         descriptionText.scrollFactor.x = 0;
         descriptionText.scrollFactor.y = 0.18;
+		descriptionText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.BLACK);
         add(descriptionText);
 
         buttonGroup = new FlxUIGroup();
@@ -157,16 +157,21 @@ class PlayState extends FlxState
     var verticalSpacing:Int = 10;
 
 	function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false, path:String)
-		{
-			var buttonText = disabled ? title + " (Disabled)" : title;
-			var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText + " by " + author, function() {
-				descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
-				currentModName = title;
-				currentModPath = path;
-			});
-			button.label.alignment = "center";
-			button.setGraphicSize(buttonWidth, buttonHeight);
-			button.updateHitbox();
-			buttonGroup.add(button);
-		}		
+	{
+		var buttonText = disabled ? title + " (Disabled)" : title;
+		var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText, function() {
+			descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
+			currentModName = title;
+			currentModPath = path;
+		});
+		
+		var buttonLabel:FlxText = new FlxText(0, 0, buttonText);
+		buttonLabel.setFormat(Paths.font("vcr.ttf"), 12, FlxColor.BLACK);
+		button.label = buttonLabel;
+		
+		button.setGraphicSize(buttonWidth, buttonHeight);
+		button.updateHitbox();
+		buttonGroup.add(button);
+	}
+		
 }
