@@ -4,24 +4,27 @@ import flixel.FlxState;
 import flixel.text.FlxText;
 import flixel.FlxG;
 import flixel.ui.FlxButton;
-import flixel.addons.ui.FlxUIGroup;
+import flixel.group.FlxGroup;
 import flixel.util.FlxColor;
 import flixel.FlxSprite;
 import sys.FileSystem;
 import sys.io.File;
 import haxe.Json;
+import flixel.FlxObject;
 
 class PlayState extends FlxState
 {
     var maintxt:FlxText;
     var bg:FlxSprite;
     var descriptionText:FlxText;
-    var buttonGroup:FlxUIGroup;
+    var buttonGroup:FlxGroup;
     var modActivated:Bool = false;
     var activationButton:FlxButton;
     var currentModName:String;
     var currentModPath:String;
     var savePath:String = "mod_folder_path.txt";
+    var scrollContainer:FlxGroup;
+    var scrollSpeed:Int = 5;
 
     override public function create()
     {
@@ -45,8 +48,8 @@ class PlayState extends FlxState
         descriptionText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.BLACK);
         add(descriptionText);
 
-        buttonGroup = new FlxUIGroup();
-        add(buttonGroup);
+        scrollContainer = new FlxGroup();
+        add(scrollContainer);
 
         super.create();
 
@@ -85,6 +88,22 @@ class PlayState extends FlxState
                 trace("cancelled");
             }
         }
+
+        if (FlxG.keys.pressed.UP)
+        {
+            for (modButton in scrollContainer.members)
+            {
+                (cast modButton:FlxObject).y += scrollSpeed;
+            }
+        }
+        if (FlxG.keys.pressed.DOWN)
+        {
+            for (modButton in scrollContainer.members)
+            {
+                (cast modButton:FlxObject).y -= scrollSpeed;
+            }
+        }
+
         super.update(elapsed);
     }
 
@@ -93,7 +112,7 @@ class PlayState extends FlxState
         activationButton = new FlxButton(FlxG.width - buttonWidth - 10, FlxG.height - 60, "Activate/Deactivate Mod", toggleModActivation);
         activationButton.setGraphicSize(200, 40);
         activationButton.updateHitbox();
-        buttonGroup.add(activationButton);
+        add(activationButton);
     }
 
     function toggleModActivation()
@@ -163,7 +182,7 @@ class PlayState extends FlxState
     function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false, path:String)
     {
         var buttonText = disabled ? title + " (Disabled)" : title;
-        var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText, function() {
+        var button:FlxButton = new FlxButton(10, (scrollContainer.length * (buttonHeight + verticalSpacing)), buttonText, function() {
             descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
             currentModName = title;
             currentModPath = path;
@@ -175,7 +194,7 @@ class PlayState extends FlxState
 
         button.setGraphicSize(buttonWidth, buttonHeight);
         button.updateHitbox();
-        buttonGroup.add(button);
+        scrollContainer.add(button);
     }
 
     function saveModFolderPath(path:String)
