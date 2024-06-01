@@ -16,8 +16,9 @@ class PlayState extends FlxState
     var bg:FlxSprite;
     var descriptionText:FlxText;
     var buttonGroup:FlxUIGroup;
-	var modActivated:Bool = false;
-	var activationButton:FlxButton; 
+    var modActivated:Bool = false;
+    var activationButton:FlxButton; 
+    var currentModName:String;
 
     override public function create()
     {
@@ -46,7 +47,7 @@ class PlayState extends FlxState
 
         super.create();
 
-		createActivationButton();
+        createActivationButton();
     }
 
     override public function update(elapsed:Float)
@@ -80,23 +81,34 @@ class PlayState extends FlxState
     }
 
     function createActivationButton()
-	{
-		activationButton = new FlxButton(FlxG.width - buttonWidth - 10, FlxG.height - 60, "Activate/Deactivate Mod", toggleModActivation);
+    {
+        activationButton = new FlxButton(FlxG.width - buttonWidth - 10, FlxG.height - 60, "Activate/Deactivate Mod", toggleModActivation);
         activationButton.setGraphicSize(200, 40);
         activationButton.updateHitbox();
         buttonGroup.add(activationButton);
-	}
+    }
 
-	function toggleModActivation()
-	{
+    function toggleModActivation()
+    {
         modActivated = !modActivated;
         activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
-		if (modActivated) {
-			// TODO: ACTIVATE MOD FUNCTION
-		} else {
-			// TODO: DEACTIVATE MOD FUNCTION
-		}
-	}
+        if (modActivated) {
+            if (currentModName != null) trace("Enabling mod: " + currentModName);
+            renameMetaFile("_polymod_meta.json", "_polymod_meta_disabled.json");
+        } else {
+            if (currentModName != null) trace("Disabling mod: " + currentModName);
+            renameMetaFile("_polymod_meta_disabled.json", "_polymod_meta.json");
+        }
+    }
+
+    function renameMetaFile(currentName:String, newName:String)
+    {
+        var currentPath = sys.FileSystem.fullPath(currentName);
+        var newPath = sys.FileSystem.fullPath(newName);
+        if (sys.FileSystem.exists(currentPath)) {
+            sys.FileSystem.rename(currentPath, newPath);
+        }
+    }
 
     function checkSubfoldersForMeta(directory:String)
     {
@@ -109,6 +121,7 @@ class PlayState extends FlxState
                         trace("Found _polymod_meta.json in: " + filePath);
                         var metaContent = sys.io.File.getContent(metaFilePath);
                         var metaData = Json.parse(metaContent);
+                        currentModName = metaData.title;
                         createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version);
                     }
                     checkSubfoldersForMeta(filePath);
@@ -119,18 +132,18 @@ class PlayState extends FlxState
         }
     }
 
-	var buttonWidth:Int = 200;
-	var buttonHeight:Int = 40;
-	var verticalSpacing:Int = 10;
+    var buttonWidth:Int = 200;
+    var buttonHeight:Int = 40;
+    var verticalSpacing:Int = 10;
 
     function createModButton(title:String, author:String, description:String, version:String)
     {
-		var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), title + " by " + author, function() {
-			descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
-		});
-		button.label.alignment = "center";
-		button.setGraphicSize(buttonWidth, buttonHeight);
-		button.updateHitbox();
-		buttonGroup.add(button);
+        var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), title + " by " + author, function() {
+            descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
+        });
+        button.label.alignment = "center";
+        button.setGraphicSize(buttonWidth, buttonHeight);
+        button.updateHitbox();
+        buttonGroup.add(button);
     }
 }
