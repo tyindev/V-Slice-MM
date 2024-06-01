@@ -26,6 +26,7 @@ class PlayState extends FlxState
     var scrollContainer:FlxGroup;
     var scrollSpeed:Int = 5;
     var icon:FlxSprite;
+    var launchButton:FlxButton;
 
     override public function create()
     {
@@ -56,7 +57,52 @@ class PlayState extends FlxState
         super.create();
 
         createActivationButton();
+        createLaunchButton();
         loadModFolderPath();
+    }
+
+    function createLaunchButton()
+    {
+        launchButton = new FlxButton(FlxG.width - buttonWidth - 10, FlxG.height - 110, "Launch Funkin'", launchFunkin);
+        launchButton.setGraphicSize(200, 40);
+        launchButton.updateHitbox();
+        add(launchButton);
+    }
+
+    function launchFunkin()
+    {
+        var modFolderPath = "";
+        try {
+            if (FileSystem.exists(savePath)) {
+                modFolderPath = File.getContent(savePath);
+            } else {
+                trace("No saved mod folder path found.");
+                return;
+            }
+        } catch (e:Dynamic) {
+            trace("Failed to load mod folder path: " + e);
+            return;
+        }
+
+        trace("Mod folder path: " + modFolderPath);
+
+        var lastSlashIndex = modFolderPath.lastIndexOf("/");
+        if (lastSlashIndex == -1) {
+            lastSlashIndex = modFolderPath.lastIndexOf("\\");
+            if (lastSlashIndex == -1) {
+                trace("Invalid mod folder path: " + modFolderPath);
+                return;
+            }
+        }
+        var parentDirectory = modFolderPath.substring(0, lastSlashIndex);
+        var executablePath = parentDirectory + "/Funkin.exe";
+        trace("Launching Funkin.exe from path: " + executablePath);
+
+        try {
+            Sys.command(executablePath);
+        } catch (e:Dynamic) {
+            trace("Failed to launch Funkin.exe: " + e);
+        }
     }
 
     override public function update(elapsed:Float)
