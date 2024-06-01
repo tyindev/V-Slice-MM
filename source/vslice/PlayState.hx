@@ -3,10 +3,11 @@ package vslice;
 import flixel.FlxState;
 import flixel.text.FlxText;
 import flixel.FlxG;
-import flixel.ui.FlxButton;
+import flixel.FlxSprite;
+import flixel.util.FlxColor;
 import sys.FileSystem;
 import sys.io.File;
-import haxe.io.Path;
+import haxe.Json;
 import sys.io.FileInput;
 
 class PlayState extends FlxState
@@ -66,20 +67,41 @@ class PlayState extends FlxState
     function checkSubfoldersForMeta(directory:String)
     {
         try {
-            for (file in sys.FileSystem.readDirectory(directory)) {
-                var filePath = haxe.io.Path.join([directory, file]);
-                if (sys.FileSystem.isDirectory(filePath)) {
-                    var metaFilePath = haxe.io.Path.join([filePath, "_polymod_meta.json"]);
-                    if (sys.FileSystem.exists(metaFilePath)) {
+            for (file in FileSystem.readDirectory(directory)) {
+                var filePath = directory + "/" + file;
+                if (FileSystem.isDirectory(filePath)) {
+                    var metaFilePath = filePath + "/_polymod_meta.json";
+                    if (FileSystem.exists(metaFilePath)) {
                         trace("Found _polymod_meta.json in: " + filePath);
-                        // Process the file as needed
+                        displayMetaInfo(metaFilePath);
                     }
-                    // Recursively check subdirectories
                     checkSubfoldersForMeta(filePath);
                 }
             }
         } catch (e:Dynamic) {
             trace("Error reading directory: " + e);
+        }
+    }
+
+    function displayMetaInfo(metaFilePath:String)
+    {
+        try {
+            var metaFileContent = File.getContent(metaFilePath);
+            var metaData = Json.parse(metaFileContent);
+
+            var title = metaData.title;
+            var description = metaData.description;
+            var author = metaData.author;
+            var modVersion = metaData.mod_version;
+
+            var metaText = new FlxText(0, 0, FlxG.width, "", 16);
+            metaText.setFormat("VCR OSD Mono", 16, FlxColor.BLACK, CENTER);
+            metaText.text = "Title: " + title + "\nDescription: " + description + "\nAuthor: " + author + "\nVersion: " + modVersion;
+            metaText.screenCenter();
+            add(metaText);
+
+        } catch (e:Dynamic) {
+            trace("Error reading _polymod_meta.json: " + e);
         }
     }
 }
