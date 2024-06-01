@@ -25,9 +25,11 @@ class PlayState extends FlxState
     var savePath:String = "mod_folder_path.txt";
     var scrollContainer:FlxGroup;
     var scrollSpeed:Int = 5;
+    var icon:FlxSprite;
 
     override public function create()
     {
+        FlxG.sound.playMusic(Paths.music('gay'));
         bg = new FlxSprite(-80).loadGraphic(Paths.image('menuDesat'));
         bg.scrollFactor.x = 0;
         bg.scrollFactor.y = 0.18;
@@ -175,6 +177,24 @@ class PlayState extends FlxState
         }
     }
 
+    function loadModIcon(path:String):FlxSprite
+    {
+        var iconPath:String = path + "/_polymod_icon.png";
+        trace("Checking for mod icon at path: " + iconPath);
+
+        if (!sys.FileSystem.exists(iconPath)) {
+            iconPath = "assets/images/default_icon.png";
+            trace("Mod icon not found. Loading default icon at path: " + iconPath);
+        } else {
+            trace("Mod icon found at path: " + iconPath);
+        }
+
+        var icon:FlxSprite = new FlxSprite(0, 0).loadGraphic(iconPath);
+        icon.setGraphicSize(128, 128);
+        icon.updateHitbox();
+        return icon;
+    }
+
     var buttonWidth:Int = 200;
     var buttonHeight:Int = 40;
     var verticalSpacing:Int = 10;
@@ -186,6 +206,17 @@ class PlayState extends FlxState
             descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
             currentModName = title;
             currentModPath = path;
+
+            if (icon != null) {
+                remove(icon);
+            }
+
+            icon = loadModIcon(path);
+            icon.x = descriptionText.x;
+            icon.y = descriptionText.y + descriptionText.height + 10;
+            icon.visible = true;
+            add(icon);
+            trace("Icon position: (" + icon.x + ", " + icon.y + ")");
         });
 
         var buttonLabel:FlxText = new FlxText(0, 0, buttonText);
@@ -196,6 +227,7 @@ class PlayState extends FlxState
         button.updateHitbox();
         scrollContainer.add(button);
     }
+
 
     function saveModFolderPath(path:String)
     {

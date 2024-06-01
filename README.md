@@ -8,4 +8,6 @@
 
 * Funkin' Crew Inc - Friday Night Funkin'
 
+* Kawai Sprite - The banger known as "Gay".
+
 * TyDotCS - V-Slice MM
