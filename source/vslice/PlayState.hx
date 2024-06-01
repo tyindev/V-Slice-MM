@@ -16,6 +16,8 @@ class PlayState extends FlxState
     var bg:FlxSprite;
     var descriptionText:FlxText;
     var buttonGroup:FlxUIGroup;
+	var modActivated:Bool = false;
+	var activationButton:FlxButton; 
 
     override public function create()
     {
@@ -43,6 +45,8 @@ class PlayState extends FlxState
         add(buttonGroup);
 
         super.create();
+
+		createActivationButton();
     }
 
     override public function update(elapsed:Float)
@@ -74,6 +78,25 @@ class PlayState extends FlxState
         }
         super.update(elapsed);
     }
+
+    function createActivationButton()
+	{
+		activationButton = new FlxButton(FlxG.width - buttonWidth - 10, FlxG.height - 60, "Activate/Deactivate Mod", toggleModActivation);
+        activationButton.setGraphicSize(200, 40);
+        activationButton.updateHitbox();
+        buttonGroup.add(activationButton);
+	}
+
+	function toggleModActivation()
+	{
+        modActivated = !modActivated;
+        activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
+		if (modActivated) {
+			// TODO: ACTIVATE MOD FUNCTION
+		} else {
+			// TODO: DEACTIVATE MOD FUNCTION
+		}
+	}
 
     function checkSubfoldersForMeta(directory:String)
     {
