@@ -8,6 +8,7 @@ import flixel.addons.ui.FlxUIGroup;
 import flixel.util.FlxColor;
 import flixel.FlxSprite;
 import sys.FileSystem;
+import sys.io.File;
 import haxe.Json;
 
 class PlayState extends FlxState
@@ -20,6 +21,7 @@ class PlayState extends FlxState
     var activationButton:FlxButton;
     var currentModName:String;
     var currentModPath:String;
+    var savePath:String = "mod_folder_path.txt";
 
     override public function create()
     {
@@ -40,7 +42,7 @@ class PlayState extends FlxState
         descriptionText = new FlxText(FlxG.width / 2, 0, FlxG.width / 2, "", 24);
         descriptionText.scrollFactor.x = 0;
         descriptionText.scrollFactor.y = 0.18;
-		descriptionText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.BLACK);
+        descriptionText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.BLACK);
         add(descriptionText);
 
         buttonGroup = new FlxUIGroup();
@@ -49,6 +51,7 @@ class PlayState extends FlxState
         super.create();
 
         createActivationButton();
+        loadModFolderPath();
     }
 
     override public function update(elapsed:Float)
@@ -75,6 +78,7 @@ class PlayState extends FlxState
                 currentModName = null;
                 currentModPath = null;
 
+                saveModFolderPath(path);
                 checkSubfoldersForMeta(path);
 
             } else {
@@ -92,32 +96,32 @@ class PlayState extends FlxState
         buttonGroup.add(activationButton);
     }
 
-	function toggleModActivation()
-	{
-		modActivated = !modActivated;
-		activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
-		if (currentModPath != null) 
-		{
-			if (modActivated) {
-				if (currentModName != null) trace("Enabling mod: " + currentModName);
-				renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
-			} else {
-				if (currentModName != null) trace("Disabling mod: " + currentModName);
-				renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
-			}
-			updateDescriptionText(modActivated);
-		} else {
-			trace("No mod selected.");
-		}
-	}
-		
-	function updateDescriptionText(modActivated:Bool)
-	{
-		var activationStatus = modActivated ? "Yes" : "No";
-		var description = descriptionText.text;
-		var existingDescription = description.substring(0, description.lastIndexOf("Mod Activated:") + "Mod Activated:".length);
-		descriptionText.text = existingDescription + " " + activationStatus;
-		}	
+    function toggleModActivation()
+    {
+        modActivated = !modActivated;
+        activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
+        if (currentModPath != null) 
+        {
+            if (modActivated) {
+                if (currentModName != null) trace("Enabling mod: " + currentModName);
+                renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
+            } else {
+                if (currentModName != null) trace("Disabling mod: " + currentModName);
+                renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
+            }
+            updateDescriptionText(modActivated);
+        } else {
+            trace("No mod selected.");
+        }
+    }
+
+    function updateDescriptionText(modActivated:Bool)
+    {
+        var activationStatus = modActivated ? "Yes" : "No";
+        var description = descriptionText.text;
+        var existingDescription = description.substring(0, description.lastIndexOf("Mod Activated:") + "Mod Activated:".length);
+        descriptionText.text = existingDescription + " " + activationStatus;
+    }
 
     function renameMetaFile(currentPath:String, newPath:String)
     {
@@ -138,12 +142,12 @@ class PlayState extends FlxState
                         trace("Found _polymod_meta.json in: " + filePath);
                         var metaContent = sys.io.File.getContent(metaFilePathEnabled);
                         var metaData = Json.parse(metaContent);
-						createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, false, filePath);
+                        createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, false, filePath);
                     } else if (sys.FileSystem.exists(metaFilePathDisabled)) {
                         trace("Found _polymod_meta_disabled.json in: " + filePath);
                         var metaContent = sys.io.File.getContent(metaFilePathDisabled);
                         var metaData = Json.parse(metaContent);
-						createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, false, filePath);
+                        createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, false, filePath);
                     }
                 }
             }
@@ -156,22 +160,47 @@ class PlayState extends FlxState
     var buttonHeight:Int = 40;
     var verticalSpacing:Int = 10;
 
-	function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false, path:String)
-	{
-		var buttonText = disabled ? title + " (Disabled)" : title;
-		var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText, function() {
-			descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
-			currentModName = title;
-			currentModPath = path;
-		});
-		
-		var buttonLabel:FlxText = new FlxText(0, 0, buttonText);
-		buttonLabel.setFormat(Paths.font("vcr.ttf"), 12, FlxColor.BLACK);
-		button.label = buttonLabel;
-		
-		button.setGraphicSize(buttonWidth, buttonHeight);
-		button.updateHitbox();
-		buttonGroup.add(button);
-	}
-		
+    function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false, path:String)
+    {
+        var buttonText = disabled ? title + " (Disabled)" : title;
+        var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText, function() {
+            descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description + "\n\nMod Activated: " + (disabled ? "No" : "Yes");
+            currentModName = title;
+            currentModPath = path;
+        });
+
+        var buttonLabel:FlxText = new FlxText(0, 0, buttonText);
+        buttonLabel.setFormat(Paths.font("vcr.ttf"), 12, FlxColor.BLACK);
+        button.label = buttonLabel;
+
+        button.setGraphicSize(buttonWidth, buttonHeight);
+        button.updateHitbox();
+        buttonGroup.add(button);
+    }
+
+    function saveModFolderPath(path:String)
+    {
+        try {
+            File.saveContent(savePath, path);
+            trace("Saved mod folder path: " + path);
+        } catch (e:Dynamic) {
+            trace("Failed to save mod folder path: " + e);
+        }
+    }
+
+    function loadModFolderPath()
+    {
+        try {
+            if (FileSystem.exists(savePath)) {
+                var path = File.getContent(savePath);
+                trace("Loaded mod folder path: " + path);
+                maintxt.visible = false;
+                checkSubfoldersForMeta(path);
+            } else {
+                trace("No saved mod folder path found.");
+            }
+        } catch (e:Dynamic) {
+            trace("Failed to load mod folder path: " + e);
+        }
+    }
 }
