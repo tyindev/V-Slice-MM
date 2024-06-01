@@ -17,8 +17,9 @@ class PlayState extends FlxState
     var descriptionText:FlxText;
     var buttonGroup:FlxUIGroup;
     var modActivated:Bool = false;
-    var activationButton:FlxButton; 
+    var activationButton:FlxButton;
     var currentModName:String;
+    var currentModPath:String;
 
     override public function create()
     {
@@ -94,17 +95,15 @@ class PlayState extends FlxState
         activationButton.color = modActivated ? 0xFF00FF00 : 0xFFFF0000;
         if (modActivated) {
             if (currentModName != null) trace("Enabling mod: " + currentModName);
-            renameMetaFile("_polymod_meta.json", "_polymod_meta_disabled.json");
+            renameMetaFile(currentModPath + "/_polymod_meta_disabled.json", currentModPath + "/_polymod_meta.json");
         } else {
             if (currentModName != null) trace("Disabling mod: " + currentModName);
-            renameMetaFile("_polymod_meta_disabled.json", "_polymod_meta.json");
+            renameMetaFile(currentModPath + "/_polymod_meta.json", currentModPath + "/_polymod_meta_disabled.json");
         }
     }
 
-    function renameMetaFile(currentName:String, newName:String)
+    function renameMetaFile(currentPath:String, newPath:String)
     {
-        var currentPath = sys.FileSystem.fullPath(currentName);
-        var newPath = sys.FileSystem.fullPath(newName);
         if (sys.FileSystem.exists(currentPath)) {
             sys.FileSystem.rename(currentPath, newPath);
         }
@@ -116,13 +115,20 @@ class PlayState extends FlxState
             for (file in sys.FileSystem.readDirectory(directory)) {
                 var filePath = directory + '/' + file;
                 if (sys.FileSystem.isDirectory(filePath)) {
-                    var metaFilePath = filePath + "/_polymod_meta.json";
-                    if (sys.FileSystem.exists(metaFilePath)) {
+                    var metaFilePathEnabled = filePath + "/_polymod_meta.json";
+                    var metaFilePathDisabled = filePath + "/_polymod_meta_disabled.json";
+                    if (sys.FileSystem.exists(metaFilePathEnabled)) {
                         trace("Found _polymod_meta.json in: " + filePath);
-                        var metaContent = sys.io.File.getContent(metaFilePath);
+                        var metaContent = sys.io.File.getContent(metaFilePathEnabled);
                         var metaData = Json.parse(metaContent);
                         currentModName = metaData.title;
+                        currentModPath = filePath;
                         createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version);
+                    } else if (sys.FileSystem.exists(metaFilePathDisabled)) {
+                        trace("Found _polymod_meta_disabled.json in: " + filePath);
+                        var metaContent = sys.io.File.getContent(metaFilePathDisabled);
+                        var metaData = Json.parse(metaContent);
+                        createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version, true);
                     }
                     checkSubfoldersForMeta(filePath);
                 }
@@ -136,9 +142,10 @@ class PlayState extends FlxState
     var buttonHeight:Int = 40;
     var verticalSpacing:Int = 10;
 
-    function createModButton(title:String, author:String, description:String, version:String)
+    function createModButton(title:String, author:String, description:String, version:String, disabled:Bool = false)
     {
-        var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), title + " by " + author, function() {
+        var buttonText = disabled ? title + " (Disabled)" : title;
+        var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), buttonText + " by " + author, function() {
             descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
         });
         button.label.alignment = "center";
