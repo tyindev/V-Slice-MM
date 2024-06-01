@@ -3,17 +3,19 @@ package vslice;
 import flixel.FlxState;
 import flixel.text.FlxText;
 import flixel.FlxG;
-import flixel.FlxSprite;
+import flixel.ui.FlxButton;
+import flixel.addons.ui.FlxUIGroup;
 import flixel.util.FlxColor;
+import flixel.FlxSprite;
 import sys.FileSystem;
-import sys.io.File;
 import haxe.Json;
-import sys.io.FileInput;
 
 class PlayState extends FlxState
 {
     var maintxt:FlxText;
     var bg:FlxSprite;
+    var descriptionText:FlxText;
+    var buttonGroup:FlxUIGroup;
 
     override public function create()
     {
@@ -30,6 +32,15 @@ class PlayState extends FlxState
         maintxt.setFormat("VCR OSD Mono", 32, FlxColor.BLACK, CENTER);
         maintxt.screenCenter(Y);
         add(maintxt);
+
+        descriptionText = new FlxText(FlxG.width / 2, 0, FlxG.width / 2, "", 24);
+        descriptionText.setFormat("VCR OSD Mono", 24, FlxColor.BLACK, LEFT);
+        descriptionText.scrollFactor.x = 0;
+        descriptionText.scrollFactor.y = 0.18;
+        add(descriptionText);
+
+        buttonGroup = new FlxUIGroup();
+        add(buttonGroup);
 
         super.create();
     }
@@ -67,13 +78,15 @@ class PlayState extends FlxState
     function checkSubfoldersForMeta(directory:String)
     {
         try {
-            for (file in FileSystem.readDirectory(directory)) {
-                var filePath = directory + "/" + file;
-                if (FileSystem.isDirectory(filePath)) {
+            for (file in sys.FileSystem.readDirectory(directory)) {
+                var filePath = directory + '/' + file;
+                if (sys.FileSystem.isDirectory(filePath)) {
                     var metaFilePath = filePath + "/_polymod_meta.json";
-                    if (FileSystem.exists(metaFilePath)) {
+                    if (sys.FileSystem.exists(metaFilePath)) {
                         trace("Found _polymod_meta.json in: " + filePath);
-                        displayMetaInfo(metaFilePath);
+                        var metaContent = sys.io.File.getContent(metaFilePath);
+                        var metaData = Json.parse(metaContent);
+                        createModButton(metaData.title, metaData.author, metaData.description, metaData.mod_version);
                     }
                     checkSubfoldersForMeta(filePath);
                 }
@@ -83,25 +96,18 @@ class PlayState extends FlxState
         }
     }
 
-    function displayMetaInfo(metaFilePath:String)
+	var buttonWidth:Int = 200;
+	var buttonHeight:Int = 40;
+	var verticalSpacing:Int = 10;
+
+    function createModButton(title:String, author:String, description:String, version:String)
     {
-        try {
-            var metaFileContent = File.getContent(metaFilePath);
-            var metaData = Json.parse(metaFileContent);
-
-            var title = metaData.title;
-            var description = metaData.description;
-            var author = metaData.author;
-            var modVersion = metaData.mod_version;
-
-            var metaText = new FlxText(0, 0, FlxG.width, "", 16);
-            metaText.setFormat("VCR OSD Mono", 16, FlxColor.BLACK, CENTER);
-            metaText.text = "Title: " + title + "\nDescription: " + description + "\nAuthor: " + author + "\nVersion: " + modVersion;
-            metaText.screenCenter();
-            add(metaText);
-
-        } catch (e:Dynamic) {
-            trace("Error reading _polymod_meta.json: " + e);
-        }
+		var button:FlxButton = new FlxButton(10, (buttonGroup.members.length * (buttonHeight + verticalSpacing)), title + " by " + author, function() {
+			descriptionText.text = "Title: " + title + "\n" + "Author: " + author + "\n" + "Version: " + version + "\n\n" + description;
+		});
+		button.label.alignment = "center";
+		button.setGraphicSize(buttonWidth, buttonHeight);
+		button.updateHitbox();
+		buttonGroup.add(button);
     }
 }
